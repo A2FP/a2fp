@@ -12,9 +12,14 @@ We also have a [Google group](https://groups.google.com/d/forum/a2fp) for furthe
 
 ## Proposals
 
-Talk proposals should be created as github issues in [this](https://github.com/A2FP/a2fp/issues) repo. They should include a **title** and a **short description** of the talk, as well as an indication of when they will be ready by. If no indication of when they are for is provided they may be scheduled for the next meeting.
+Talk proposals should be created as github issues in [this](https://github.com/A2FP/a2fp/issues) repo.
 
-Proposals should be assigned to the proposed speaker.
+Proposals should:
+* include a **title** and a **short description** of the talk
+* be assigned to the proposed speaker
+* tagged with the `proposal` label
+* mention the expected length
+* specify an indication of when they will be ready by. If no indication of when they are for is provided they may be scheduled for the next meeting.
 
 Please vote for talks by starring/favouriting them.
 
