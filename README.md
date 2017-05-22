@@ -4,7 +4,7 @@
 
 We are a group of people in Ann Arbor, MI, interested in Functional Programming. We're interested in heaps of languages like Haskell, Scala, F#, Erlang, LISP, Ocaml, Scheme, and more.
 
-Anyone who is interested is welcome to come along, meetings are usually the last Wednesday of the month and are announced on the [eventbrite page](https://www.eventbrite.com.au/o/a2-fp-13580684967). Attendees should RSVP.
+Anyone who is interested is welcome to come along, meetings are usually the last Wednesday of the month and are announced on [meetup.com](https://www.meetup.com/AnnArborFP/). Attendees should RSVP.
 
 We also have a [Google group](https://groups.google.com/d/forum/a2fp) for further discussions.
 
