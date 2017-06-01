@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Negative Space</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Negative Space
+
+.zoomed[![henry moore sculpture](hmoore.jpg "henry moore sculpture")]
+
+why dynamic languages are bad at functions
+
+---
+
+# negative space
+
+Doing FP in javascript is not just as good as using an FP language
+
+.center[.bottom[![languages](languages2.jpg "languages")]]
+---
+
+# Chomsky up
+.center[.bottom[![power](Chomsky-hierarchy.svg "Powerl")]]
+
+---
+
+# Computational freedom as power-up
+
+- regular: can do a few things. i guess.
+- context-free: can balance parentheses
+- context-sensitive: can think about more than two things at once!
+(ie, { a^n b^n c^n | n>=1 )
+- Recursively-enumerable (Turing complete) - Any damn thing you want
+
+---
+
+# Chomsky down
+
+.center[.bottom[![power](Chomsky-hierarchy.svg "Powerl")]]
+
+---
+# Freedom is slavery, citizen
+
+- RE (Turing complete) languages can run forever (halting problem)
+- context-sensitive languages can't run forever or use infinite memory
+- context-free languages runs in O(n^3 . |Grammar|)
+- regular languages (not Perl regexes!) run in O(n) time
+
+---
+
+# .center[What is negative space?]
+
+
+.center[.bottom[![awakening](Awakening.jpg "awakening")]]
+
+art:     things that aren't there that make it better
+
+computing: things that are impossible in the system that make it better
+
+---
+
+# Why is this good?
+
+- All programming languages talk about what they can do
+- Very few talk about what they can forbid
+- negative space is a superpower
+
+---
+background-size: cover
+background-image: url(game.jpg)
+
+---
+
+# Simple integer function
+  .center[⦺(1) = 2]
+<br>
+  .center[⦺(2) = 4]
+<br>
+  .center[What's ⦺(3) ?]
+
+---
+
+# Trick question.
+
+It's 42, but the right answer is "not enough
+information to say".
+
+(Note that if you are using Ruby or Clojure,
+ an image of a banana or the source code to PHP are also perfectly
+ reasonable answers.)
+
+---
+
+# missing negative space
+
+- Int64 -> Int64 is too big!
+- Testing won't help: 2^64 inputs mapping to 2^64 outputs, 2^128
+possible functions.
+- Test a million a second, you'll still be there for 584942 years.
+
+---
+
+# make it smaller
+
+```
+data TrafficLight
+  = Red
+  | Yellow
+  | Green
+
+data Action
+  = Brake
+  | Continue
+
+type Strategy = TrafficLight -> Action
+```
+
+How many traffic lights?
+
+How many responses?
+
+How many strategies?
+
+---
+
+# make it bigger?
+
+```
+foo :: a -> a
+```
+
+How many?
+
+```
+blah :: a -> [a]
+```
+
+?
+
+
+
+---
+background-size: cover
+background-image: url(game.jpg)
+---
+
+# Let's make it easier
+  - ⧲(1) => 2
+  - ⧲(1) => 2
+
+What happens when we call
+  - ⧲(1) => 2
+
+?
+
+---
+
+# Another trick question!
+
+the third time it's called, it returns 42, and burns your mum's
+house down.
+
+
+.center[![awakening](disaster-girl.jpg "awakening")]
+
+---
+
+# back in the real world
+
+- We need to call web APIs, update databases, _do_ stuff.
+- What's the answer?
+
+---
+
+# IO!
+
+- Haskell tags things-that-do-things as "IO"
+- IO includes persistent state
+- not going to talk about the mechanism, except to say that you can't
+get an "a" out of an "IO a" except by running it through the IO interpreter.
+- encourages you to push mutability to the edges.
+
+---
+
+# IO, IO, a-mutating we shall go
+
+```
+⧲ :: Int -> Int
+```
+
+- will always return the same thing for the same inputs
+- can't do anything else - mum's house is safe.
+
+```
+⛣ :: Int -> IO Int
+```
+
+We know to be careful now...
+
+---
+
+# Bonus round
+
+```
+thingo :: Bool -> a -> b -> (a -> c) -> (b -> c) -> c
+thingo True a b f g = f a
+thingo False a b f g = g a
+```
+
+versus
+
+```
+thingo :: Bool -> Int -> Int -> (Int -> String) -> (Int -> String) -> String
+thingo True a b f g = f a
+thingo False a b f g = g a
+```
+
+Bug in both! But the compiler catches one. Why?
+
+---
+
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
