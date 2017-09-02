@@ -1,0 +1,135 @@
+Intro:
+
+What are lenses?
+
+You can "get" or "set" a given field that is a single part of a larger whole.
+You may isolate only the piece of data you are interested in (getter), or transform particular fields of compound data structures (setter).
+
+There are a handful of lens libraries for Haskell; I'll be focusing on the popular library developed by Edward Kmett.
+
+My focus will be showing you what the library can do (whirlwind tour) more than teaching you the finer points of how to use it.
+I'll be focusing on the basic operations that the library provides / those that I frequently use in my own work.
+I won't touch on how the library is implemented.
+
+-----
+
+Working with tuples:
+
+λ> let pair = (1, 'a')
+
+Getting:
+
+λ> view _1 pair
+λ> view _2 pair
+λ> pair^._1
+λ> pair^._2
+
+Setting:
+
+λ> set _1 2 pair
+λ> set _2 'b' pair
+λ> (_1 .~ 2) pair
+λ> pair & _1 .~ 2
+λ> pair & _2 .~ 'b'
+
+Drilling down into nested data via composed lenses:
+
+λ> let nested = (True, pair)
+λ> nested
+
+λ> nested^._1
+λ> nested^._2
+λ> nested^._2._1 -- This "." is the standard "(.)" function.
+λ> nested^._2._2
+
+λ> nested & _2._1 .~ 2
+λ> nested & _2._2 .~ 'b'
+
+Other setting operations:
+
+λ> nested & _2._1 +~ 1
+λ> nested & _2._1 -~ 1
+λ> nested & _2._1 *~ 5
+
+λ> nested & _1 %~ not
+λ> import Data.Char
+λ> nested & _2._2 %~ toUpper
+
+"both" and "each":
+
+λ> let chars = ('A', 'B')
+λ> chars & both %~ toLower
+
+λ> let triple = ('A', 'B', 'C')
+λ> triple & each %~ toLower
+
+"to" and "views":
+
+λ> triple^._1
+λ> triple^._1.to toLower
+λ> views _1 toLower triple
+
+Working with "IntMap"s:
+
+λ> import Data.IntMap
+λ> let m = fromList [(1, 'a'), (2, 'b'), (3, 'c')]
+λ> m^.at 1
+λ> m^.at 0
+
+λ> m & at 1 .~ Just 'z'
+λ> m & at 1 ?~ 'z'
+λ> m & at 1 .~ Nothing
+
+-----
+
+Using lenses with your own record data types:
+
+data Entity = Entity { name :: String
+                     , desc :: String } deriving Show
+
+data Obj = Obj { entity :: Entity
+               , weight :: Int
+               , vol    :: Int } deriving Show
+
+data Weapon = Weapon { obj :: Obj
+                     , dmg :: (Int, Int) } deriving Show
+
+sword :: Weapon
+sword = Weapon { obj = Obj { entity = Entity { name = "sword"
+                                             , desc = "It's a rusty shortsword." }
+                           , weight = 2
+                           , vol    = 3 * 2 * 20 }
+               , dmg = (5, 10) }
+
+Record types without lenses:
+
+(Viewing/updating "dmg")
+λ> :type dmg
+λ> dmg sword
+λ> sword { dmg = (10, 15) }
+
+(Viewing/updating "weight")
+λ> weight sword -- error
+λ> (weight . obj) sword
+λ> sword { obj = (obj sword) { weight = 3 } }
+
+Record types with lenses:
+
+{-# LANGUAGE TemplateHaskell #-}
+TH can automatically generate lenses for your records.
+TH is compile-time meta programming. That is, the evaluation of TH code (at compile time) produces Haskell code.
+
+Prefix the names of your records with underscores.
+
+makeLenses ''Entity
+makeLenses ''Obj
+makeLenses ''Weapon
+
+λ> sword
+λ> sword^.dmg
+λ> sword & dmg.both *~ 2
+λ> sword^.obj.weight
+λ> sword^.obj.entity.name
+λ> sword & obj.entity.name %~ map toUpper
+λ> sword & obj.entity.name <>~ " of thunder"
+λ> sword & obj.entity.name <>~ " of thunder" & dmg.both *~ 2
