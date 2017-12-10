@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Practical Haskell Web Apps</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Practical Haskell Web Apps
+
+
+
+Mark Wotton
+
+```
+mwotton@gmail.com
+shimweasel.com
+@mwotton
+```
+---
+background-image: url(turps.jpg)
+---
+
+# Why should you care?
+
+Haskell web apps are
+- fast
+- fast to write
+- easy to package in a single binary, deployment can be rsync
+- fun
+
+HOWEVER
+- fair bit of ecosystem fragmentation
+
+---
+
+background-image: url(knife.jpg)
+# Mindset
+
+Typical Haskell library:
+
+- Attoparsec:
+  - parse text precisely and fast.
+- Conduit:
+  - handle streaming data
+- async:
+  - manage concurrent processes
+
+
+Do one thing extremely well
+
+---
+
+# Web apps
+
+
+... not that
+
+- routing
+- http methods, error handling etc
+- database integration, migrations etc
+- content-types
+- authorisation
+- authentication
+- logging
+- ...
+
+.center[![crazyknife](crazyknife.jpg)]
+
+---
+# Why was Rails such a roaring success?
+
+.zoomed[![yesod](rails-logo.svg "yesod")]
+
+## convention and context
+- code layout
+- migrations
+- golden set of defaults
+
+???
+
+really want to do this all yourself for every app?
+
+---
+
+# Ecosystem
+
+- Snap
+- Scotty/Spock/etc
+- wai
+- Servant
+- Yesod
+
+---
+
+# Snap
+
+- a collection of "snappable" modules
+- i haven't built anything serious in it, can't be that objective.
+
+---
+
+# Scotty/Spock
+
+```haskell
+{-# LANGUAGE OverloadedStrings #-}
+import Web.Scotty
+
+import Data.Monoid (mconcat)
+
+main = scotty 3000 $ do
+    get "/:word" $ do
+        beam <- param "word"
+        html $ mconcat ["<h1>Scotty, ", beam, " me up!</h1>"]
+```
+
+- route-first style
+- great for small apps
+
+---
+# WAI
+
+```haskell
+main = run 3000 $ \_ ->
+    return $ responseLBS
+        statusOK
+        [("Content-Type", "text/plain")]
+        "Hello World"
+```
+
+Useful mostly for cheating on benchmarks.
+
+---
+
+# Servant (my forbidden love)
+
+```haskell
+data User = User { userName :: Text
+                 , userNobelPrizes :: Int
+                 }
+
+type UserAPI1 = "users" :> Get '[JSON] [User]
+
+server1 :: Server UserAPI1
+server1 = return [ User "Mark Wotton"     0
+                 , User "Albert Einstein" 1
+                 , User "Marie Curie"     2 ]
+
+main = run 8081 $ serve (Proxy :: Proxy UserAPI1) server1
+
+-- in client code
+
+getUsers = client (Proxy :: UserAPI1)
+```
+---
+
+## Downsides
+
+.zoomed[![heartbreak](heartbreak.jpg "heartbreak")]
+- sometimes underbaked or missing - authentication is new & fiddly, can't do some "normal" web things like set cookies
+- backwards compatibility not a priority - aiming for perfection
+- better for JSON-based API servers than HTML webapps
+
+---
+
+# Yesod
+
+.zoomed[![yesod](yesod.png "yesod")]
+
+- means "Foundation"
+- opinionated: while you can swap pieces out, there's definitely a Yesod Way
+- feature-complete
+- mostly typesafe, but only to level of links (a given handler can
+  render json/html/whatever any way it likes - no equivalent of
+  api-as-a-type)
+- bakes in support for environments (dev, test, staging, production)
+
+---
+
+# Yesod <3 Quasiquoters
+
+- a way of constructing a program by running some code at compile time
+- how is this different to Template Haskell?
+- isn't really, just prettier.
+
+```haskell
+curryN :: Int -> Q Exp
+curryN n = do
+  f  <- newName "f"
+  xs <- replicateM n (newName "x")
+  let args = map VarP (f:xs)
+      ntup = TupE (map VarE xs)
+  return $ LamE args (AppE (VarE f) ntup)
+```
+
+vs
+
+```haskell
+[parseRoutes|
+/             HomeR     GET
+/blog         BlogR     GET POST
+/blog/#BlogId BlogPostR GET POST
+
+/static       StaticR   Static getStatic
+|]
+```
+---
+# Why go to the effort?
+
+- DB dsl gives us migrations (sorta) as well as consistency
+- dev experience is smooth: add a new field or table, the type system tells you what's on your to-do list
+- link construction is typesafe, and orthogonal to actual URL structure
+- so are templates!
+- so is config!
+
+General pattern: do as much at compile time as possible. Catch errors
+early. Don't get paged.
+
+---
+# Quasiquoted Database DSL
+
+```haskell
+[persistLowerCase|
+User json sql=users
+  name        Text
+  nobelPrizes Int
+  uuid        UUID sqltype=uuid default=uuid_generate_v4()
+  UniqUserUuid uuid
+  deriving Show Read Eq Typeable
+|]
+```
+
+---
+# Quasiquoted Routes DSL
+```haskell
+[parseRoutes|
+/users      UsersR    GET POST
+|]
+```
+
+---
+# Quasiquoted Template DSL
+```haskell
+$doctype 5
+<html>
+    <head>
+        <title>#{pageTitle} - My Site
+        <link rel=stylesheet href=@{Stylesheet}>
+    <body>
+        <h1 .page-title>#{pageTitle}
+        <p>Here is a list of your friends:
+        $if null friends
+            <p>Sorry, I lied, you don't have any friends.
+        $else
+            <ul>
+                $forall Friend name age <- friends
+                    <li>#{name} (#{age} years old)
+        <footer>^{copyright}
+```
+
+similar for CSS & JavaScript
+
+---
+
+# Databases
+
+Yesod uses Persistent
+- table layout DSL we just saw
+- fairly primitive query language (sub-SQL)
+- Esqueleto fills the gaps
+  - maps more or less directly to SQL, can name fragments, _mostly_ typesafe
+
+---
+
+# Important typeclasses
+
+Normal Haskell ecosystem
+- Aeson FromJSON/ToJSON
+
+Yesod ecosystem
+- PathPiece
+- Persistent
+
+---
+
+# Aeson
+
+```haskell
+class ToJSON a where
+    toJSON     :: a -> Value
+
+class FromJSON a where
+    parseJSON  :: Value -> Parser a
+```
+
+---
+# PathPiece
+
+```haskell
+class PathPiece s where
+  fromPathPiece :: Text -> Maybe s
+  toPathPiece :: s -> Text
+```
+
+- Basically a Read typeclass that doesn't suck. (Death to partial
+functions.)
+- used for parsing URLs: if you want to enforce the constraint that only
+  prime-valued ids are legitimate URLs, you can do that.
+
+---
+# Persistent
+
+```haskell
+instance PersistField CustomerId where
+  toPersistValue (CustomerId custId) = PersistText custId
+  fromPersistValue (PersistText t) = Right (CustomerId t)
+  fromPersistValue nope = Left ("Got the wrong type for CustomerId, expected PersistText, got this instead: " <> tshow nope)
+```
+
+---
+# An actual handler
+
+```haskell
+getCompanyR :: Handler TypedContent
+getCompanyR = do
+  (_, _, company) <- requireManager
+  selectRep $ do
+    provideRep $ return (toJSON $ entityVal company)
+    provideRep $ defaultLayout [whamlet| #{show company} |]
+```
+
+---
+# what sucks
+
+- migrations aren't reified
+  - ended up using activerecord migrations & a test step that breaks the build if there are any migration changes
+- compile times can be slow
+- dynamic subdomained sites are a bit of a hack - have to rewrite in middleware
+- no end-to-end json model by default for SPAs
+  - purescript-bridge
+  - ghcjs
+
+---
+# what's awesome
+
+- most stuff is there and works
+- responsive dev team
+- story for integration testing (yesod-test)
+- support for streaming responses without storing in-memory
+
+---
+# Questions
+
+---
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
